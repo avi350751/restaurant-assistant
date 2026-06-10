@@ -1,0 +1,264 @@
+{
+  "name": "Ghoroya_Restaurant_Data_Insert",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -464,
+        -128
+      ],
+      "id": "172e5bd5-ebc5-439a-b7d4-eccb25c4f2b1",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1re62KUDkZC_r7o6DxRn0Ng1sxWemFVS3",
+            "mode": "list",
+            "cachedResultName": "Ghoroya",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1re62KUDkZC_r7o6DxRn0Ng1sxWemFVS3"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -240,
+        -128
+      ],
+      "id": "0f7c8167-814a-4b30-b073-a10632072bed",
+      "name": "Download",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "G0QwoPex4uPYG4Bd",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        208,
+        -240
+      ],
+      "id": "731ff3be-aad8-49d5-b8b0-16e7129baa7b",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -32,
+        -304
+      ],
+      "id": "ad2bf4db-d41c-4219-bce5-484e12794fb4",
+      "name": "Get_Content",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "G0QwoPex4uPYG4Bd",
+          "name": "Google Drive OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "ghoroya",
+          "mode": "list",
+          "cachedResultName": "ghoroya"
+        },
+        "options": {
+          "pineconeNamespace": "Ghoroya"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "typeVersion": 1.3,
+      "position": [
+        512,
+        -224
+      ],
+      "id": "7cc7b00d-68e9-4af0-a4b7-b4e2099627fc",
+      "name": "Pinecone Vector Store",
+      "credentials": {
+        "pineconeApi": {
+          "id": "jlQlV1RHRTjvuHxV",
+          "name": "Pinecone account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        288,
+        64
+      ],
+      "id": "61e21df2-eca6-47be-bc84-28aa4ae6e194",
+      "name": "Embeddings OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "56ZpFc5mSejdU5Or",
+          "name": "OpenAI account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "textSplittingMode": "custom",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1.1,
+      "position": [
+        624,
+        48
+      ],
+      "id": "35249fe0-f219-4b17-8003-900efb3f9624",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        624,
+        240
+      ],
+      "id": "20e5da00-bc1e-47d8-b8cd-87150605f26a",
+      "name": "Recursive Character Text Splitter"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Download",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download": {
+      "main": [
+        [
+          {
+            "node": "Get_Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get_Content": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone Vector Store",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pinecone Vector Store": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "d9ab088f-4c01-482a-9ca1-e56cf2026050",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "eee031bc6a753ca650e0ac6d34b8353266e2ad57d1fcbe58467732ee0a6216d6"
+  },
+  "nodeGroups": [],
+  "id": "qTWAZoUWqykKPQzI",
+  "tags": []
+}
